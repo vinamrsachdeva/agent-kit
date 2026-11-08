@@ -1,6 +1,6 @@
 # Skills
 
-My agent skills. Small, composable, and easy to adapt: fork them and make them your own.
+My agent skills.
 
 ## Install
 
