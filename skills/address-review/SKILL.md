@@ -59,13 +59,13 @@ Run `/code-review` with BASE_SHA as the fixed point, so it covers only this run'
 
 Done when the user has ruled on every finding.
 
-## 5. Agree, then push and reply
+## 5. Agree, then publish
 
-Everything stays local until the user agrees with every reply and resolve decision.
+The push, the replies and the resolves all wait for the user's **go**.
 
-1. **Draft** for each item: its reply, linking its commit (short SHA) or issue, with the evidence for `disagree`; and a **resolve decision**, proposed as resolve for bot threads and leave open for human threads. Show the user every draft together, plus the list of local commits waiting to push.
-2. **Revise** drafts and decisions until the user approves them all. While they are revising, no push, no post, no resolve.
-3. **Publish**, in this order, only after that approval:
+1. **Draft** each item's reply, linking its commit (short SHA) or issue, with the evidence for `disagree`, and its **resolve decision**: propose resolve for bot threads, leave open for human threads. Show the user every draft together, plus the local commits waiting to push.
+2. **Revise** drafts and decisions until the user gives one **go** covering all of them.
+3. **Publish**, in this order:
    1. `git push`: the run's only push, so the commit links in the replies resolve.
    2. Post each reply: `gh api -X POST repos/{owner}/{repo}/pulls/{number}/comments/{databaseId}/replies -f body=...`
    3. Resolve each thread marked resolve: `gh api graphql -f query='mutation{resolveReviewThread(input:{threadId:"<id>"}){thread{isResolved}}}'`
