@@ -1,6 +1,6 @@
 ---
 name: address-review
-description: Address every unresolved review thread on a PR, bot or human: triage table, the user's call, fixes, issues, replies.
+description: "Address every unresolved review thread on a PR, bot or human: triage table, the user's call, fixes, issues, replies."
 disable-model-invocation: true
 argument-hint: "[pr-number]"
 ---
