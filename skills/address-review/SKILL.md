@@ -1,6 +1,6 @@
 ---
 name: address-review
-description: "Address every unresolved review thread on a PR, bot or human: triage table, the user's call, fixes, issues, replies."
+description: "Address every unresolved review thread on a PR, bot or human: one at a time, the user's call, fixes, issues, replies."
 disable-model-invocation: true
 argument-hint: "[pr-number]"
 ---
@@ -11,7 +11,7 @@ Best run in the session that built the PR (e.g. the `/implement-spec` session): 
 
 ## 1. Gather
 
-1. PR is `$ARGUMENTS`, else the current branch's PR: `gh pr view --json number,title,baseRefName,headRefOid,url`. Record `headRefOid` as **BASE_SHA**, the fixed point for step 5.
+1. PR is `$ARGUMENTS`, else the current branch's PR: `gh pr view --json number,title,baseRefName,headRefOid,url`. Record `headRefOid` as **BASE_SHA**, the fixed point for step 4.
 2. Fetch threads with GraphQL (REST cannot see `isResolved`), paging on `endCursor`:
 
    ```
@@ -27,52 +27,51 @@ Best run in the session that built the PR (e.g. the `/implement-spec` session): 
 
 Done when every unresolved thread is an item.
 
-## 2. Triage
+## 2. Walk the items
 
-For each item, check whether the reviewer's **claim** is true: read the code, or write a test that fails if the claim holds. Check it against the spec and any earlier `/code-review` findings. Then propose one **bucket**:
+Take the items one at a time, in file order, outdated ones last. For each:
 
-| Bucket | When | Outcome |
-|---|---|---|
-| `real bug` | Claim true, behaviour is wrong | `/tdd` fix |
-| `style/naming` | Claim true, no behaviour change | direct fix |
-| `disagree` | Claim false, or the code is right as written | reply with evidence |
-| `already handled` | Current code already fixes it | reply naming the commit that fixed it |
-| `defer` | Valid, out of this PR's scope | GitHub issue |
-| `design change` | Fix needs a decision the spec didn't make, or touches other modules | GitHub issue, taken into `/grill-with-docs` |
-| `spec was wrong` | Code should change and the spec was wrong too | fix + spec edit (+ ADR) |
+1. **Show** the reviewer's comment verbatim, the whole body, with its path:line, source, comment URL and any later comments in the thread.
+2. **Check** whether its **claim** is true: read the code, or write a test that fails if the claim holds. Check it against the spec and any earlier `/code-review` findings. Show the verdict, the evidence (a file:line, a test result, a spec quote) and one proposed **bucket**:
 
-Show the user one table: `# | bot/human | claim | claim true? | evidence | proposed bucket`. Evidence is concrete: a file:line, a test result, a spec quote.
+   | Bucket | When | Outcome |
+   |---|---|---|
+   | `real bug` | Claim true, behaviour is wrong | `/tdd` fix |
+   | `style/naming` | Claim true, no behaviour change | direct fix |
+   | `disagree` | Claim false, or the code is right as written | reply with evidence |
+   | `already handled` | Current code already fixes it | reply naming the commit that fixed it |
+   | `defer` | Valid, out of this PR's scope | GitHub issue |
+   | `design change` | Fix needs a decision the spec didn't make, or touches other modules | GitHub issue, taken into `/grill-with-docs` |
+   | `spec was wrong` | Code should change and the spec was wrong too | fix + spec edit (+ ADR) |
 
-Done when the user approves the whole table, with any per-row overrides applied.
+3. **Wait** for the user's call: approve the bucket or name another.
+4. **Fix** fix-bucket items now, then commit locally: one commit, its message carrying the thread's comment URL.
+   - `real bug`: a subagent driving `/tdd`.
+   - `style/naming`: edit directly.
+   - `spec was wrong`: the code fix, plus the spec edit as its own commit. A hard-to-reverse decision also gets an ADR via `/domain-modeling`.
 
-## 3. Fix
+Then move to the next item.
 
-One subagent at a time on the PR branch (parallel ones would conflict). One commit per item, its message carrying the thread's comment URL.
+Done when every item has the user's call and every fix-bucket item has its local commit.
 
-- `real bug`: one subagent per item, driving `/tdd`.
-- `style/naming`: one subagent for all of them.
-- `spec was wrong`: the code fix, plus the spec edit as its own commit in this PR. A hard-to-reverse decision also gets an ADR via `/domain-modeling`.
-
-Done when every fix-bucket item has its commit.
-
-## 4. Issues
+## 3. Issues
 
 For each `defer` and `design change` item, `gh issue create` with the claim, the evidence and a link back to the thread. `design change` issues add: "Take into `/grill-with-docs`." Record each issue URL for its reply.
 
-## 5. Review
+## 4. Review
 
 Run `/code-review` with BASE_SHA as the fixed point, so it reviews only the fix commits. Show the user its findings.
 
-## 6. Push and reply
+## 5. Push and reply
 
-1. `git push`, so commit links in the replies resolve.
+1. `git push`: the first push of the run, after every item is settled, so commit links in the replies resolve.
 2. Draft one reply per item, linking its commit or issue; `disagree` replies carry the evidence. Show the user every draft together.
 3. After the user's one "go", post each: `gh api -X POST repos/{owner}/{repo}/pulls/{number}/comments/{databaseId}/replies -f body=...`
 4. Resolve **bot** threads only: `gh api graphql -f query='mutation{resolveReviewThread(input:{threadId:"<id>"}){thread{isResolved}}}'`. Human threads stay open for their reviewer to resolve.
 
 Done when every item has a posted reply and every bot thread is resolved.
 
-## 7. Summary
+## 6. Summary
 
 Report to the user: counts per bucket, plus the **mechanical** items (ones a lint rule or automated check could have caught), with a suggestion to run `/retro`. Stop there; CI is a separate job.
 
