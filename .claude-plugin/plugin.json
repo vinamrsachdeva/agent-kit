@@ -1,0 +1,10 @@
+{
+  "name": "vin-skills",
+  "version": "0.1.0",
+  "description": "Vin's agent skills: address-review settles every unresolved review thread on a PR.",
+  "author": { "name": "Vinamr Sachdeva", "url": "https://github.com/vinamrsachdeva" },
+  "repository": "https://github.com/vinamrsachdeva/skills",
+  "license": "MIT",
+  "keywords": ["code-review", "pull-request", "copilot"],
+  "skills": ["./skills/address-review"]
+}

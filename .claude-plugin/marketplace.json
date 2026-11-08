@@ -1,0 +1,14 @@
+{
+  "name": "vinamrsachdeva",
+  "owner": { "name": "Vinamr Sachdeva", "url": "https://github.com/vinamrsachdeva" },
+  "description": "Vin's agent skills, as an installable Claude Code plugin.",
+  "plugins": [
+    {
+      "name": "vin-skills",
+      "source": "./",
+      "description": "Address every unresolved PR review thread, bot or human: triage table, your call, fixes, issues, replies.",
+      "category": "engineering",
+      "keywords": ["code-review", "pull-request", "copilot"]
+    }
+  ]
+}
