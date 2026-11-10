@@ -1,5 +1,5 @@
 #!/bin/sh
-# Symlink this repo's AGENTS.md, bin/ scripts and skills into place. Safe to re-run.
+# Symlink this repo's AGENTS.md, bin/ scripts (if any) and skills into place. Safe to re-run.
 set -e
 R=$(cd "$(dirname "$0")" && pwd)
 link() { # link <target-in-repo> <link-path>
@@ -7,5 +7,5 @@ link() { # link <target-in-repo> <link-path>
 	mkdir -p "$(dirname "$2")"; ln -sfn "$1" "$2"; echo "$2 -> $1"
 }
 link "$R/AGENTS.md" "$HOME/.claude/AGENTS.md"
-for f in "$R"/bin/*; do link "$f" "$HOME/.local/bin/$(basename "$f")"; done
+for f in "$R"/bin/*; do [ -e "$f" ] || continue; link "$f" "$HOME/.local/bin/$(basename "$f")"; done
 for d in "$R"/skills/*/; do d=${d%/}; link "$d" "$HOME/.claude/skills/$(basename "$d")"; done
