@@ -10,7 +10,10 @@
 
 ## Pull requests
 
-- Open every PR with `ship-pr` (`--base <branch>` if not main; `--dry-run` to preview). It drafts the body, pushes and opens the PR in one step, so run it instead of `git push` + `gh pr create`.
+- When writing a PR description (new PR, or rewriting/reformatting an existing one), first check the repo for PR guidance (`.github/pull_request_template.md`, `.github/PULL_REQUEST_TEMPLATE/`, `CONTRIBUTING.md`, `AGENTS.md`/`CLAUDE.md`), then:
+  1. Repo mandates a full PR format: follow it strictly. Skip the `pr` skill.
+  2. Repo only requires certain sections or content: use the `pr` skill's format, plus whatever extra text covers each required item.
+  3. No guidance: use the `pr` skill's format as-is.
 
 ## Killing processes
 
