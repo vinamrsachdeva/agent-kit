@@ -1,0 +1,6 @@
+#!/bin/sh
+# The global core.hooksPath (install.sh) hides each repo's own .git/hooks. Every hook name in this
+# folder except pre-push links here, and runs the repo's own hook of the same name, if it has one.
+own="$(git rev-parse --git-common-dir)/hooks/$(basename "$0")"
+[ -x "$own" ] && exec "$own" "$@"
+exit 0

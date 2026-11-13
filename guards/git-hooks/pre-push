@@ -1,0 +1,51 @@
+#!/bin/bash
+# agent-kit push guard. Installed for every repo through the global core.hooksPath (install.sh).
+#
+# A push started by an agent (Claude Code, Codex) or by any program without a terminal opens a
+# macOS dialog, and goes through only when a human clicks Push. A push you type in your own
+# terminal goes straight through. Then the repo's own .git/hooks/pre-push runs, if it has one.
+#
+# It catches accidents, not an agent set on getting around it: `--no-verify` and
+# `-c core.hooksPath=` skip every hook, so agent-kit's Claude permissions deny both.
+
+remote="$1"
+url="$2"
+refs=$(cat) # one "<local ref> <local sha> <remote ref> <remote sha>" line per ref being pushed
+
+agent=""
+if [ -n "${CLAUDECODE:-}" ]; then
+	agent="Claude Code"
+elif compgen -e | grep -q '^CODEX_'; then
+	agent="Codex"
+elif ! (: </dev/tty) 2>/dev/null; then
+	agent="A program without a terminal"
+fi
+
+if [ -n "$agent" ]; then
+	what=$(printf '%s\n' "$refs" | awk 'NF { sub("^refs/heads/", "", $3); print $3 }' | paste -sd ',' - | sed 's/,/, /g')
+	msg="$agent wants to push ${what:-nothing} to $remote ($url)."
+	if ! command -v osascript >/dev/null 2>&1; then
+		echo "pre-push: blocked. $msg No dialog available here: run the push from your own terminal." >&2
+		exit 1
+	fi
+	# The message goes in as an argument, so nothing in it is parsed as AppleScript.
+	answer=$(osascript \
+		-e 'on run argv' \
+		-e 'display dialog (item 1 of argv) with title "git push" buttons {"Block", "Push"} default button "Block" cancel button "Block" with icon caution giving up after 120' \
+		-e 'end run' "$msg" 2>/dev/null)
+	case "$answer" in
+	*"button returned:Push"*) ;;
+	*)
+		echo "pre-push: blocked. $msg It needs a click on Push in the dialog; ask the user." >&2
+		exit 1
+		;;
+	esac
+fi
+
+# core.hooksPath hides the repo's own hooks; run its pre-push, if any.
+own="$(git rev-parse --git-common-dir)/hooks/pre-push"
+if [ -x "$own" ]; then
+	if [ -n "$refs" ]; then printf '%s\n' "$refs"; fi | "$own" "$@"
+	exit $?
+fi
+exit 0
