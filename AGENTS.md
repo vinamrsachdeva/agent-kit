@@ -18,3 +18,7 @@
 ## Killing processes
 
 - Never kill by name or pattern (`pkill`, `killall`, `kill $(pgrep …)`, `… | xargs kill`): `-f` patterns match full command lines, so `pkill -f cat` hits every app under `/Applications`. Run `pgrep -fl '<pattern>'`, check the list, then `kill <PID>`. To free a port: `lsof -ti tcp:<port> -sTCP:LISTEN`. A `kill-guard` hook blocks the unsafe forms.
+
+## Pushing
+
+- A global `pre-push` hook opens a dialog for every push an agent starts; it goes through only when I click Push. When it says "blocked", tell me and wait: I either click Push on a retry or push myself.

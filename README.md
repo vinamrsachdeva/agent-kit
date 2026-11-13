@@ -1,6 +1,6 @@
 # agent-kit
 
-My agent setup: global agent rules and skills.
+My agent setup: global agent rules, skills, and guards.
 
 ```
 agent-kit/
@@ -8,7 +8,11 @@ agent-kit/
 ├── skills/         # skills → ~/.claude/skills
 │   ├── address-review/
 │   └── socratic-course-tutor/
-└── install.sh      # makes those symlinks; safe to re-run
+├── guards/
+│   ├── claude-hooks/            # Claude Code hooks → ~/.claude/hooks
+│   ├── git-hooks/               # push guard for every repo → ~/.config/git/hooks (core.hooksPath)
+│   └── claude-permissions.json  # ask/deny rules, merged into each Claude profile's settings.json
+└── install.sh      # makes those symlinks, sets core.hooksPath, merges the rules; safe to re-run
 ```
 
 ## Local setup
@@ -63,6 +67,14 @@ The first time it meets a graded site, it explores the site once and writes an a
 - **Run:** ask to be taught or quizzed, e.g. "teach me chapter 3 of boot.dev's learn-javascript", "tutor me through MIT 6.006 lecture 4", "drill me on this video: <url>".
 - **Needs:** Python 3. For local code lessons, the language's runner (`node`, `pytest`, `npx`, `go`). `yt-dlp` for video transcripts, optional. Reads sites' public content only, so it asks you which lessons you've already finished.
 - **Credits:** the tutoring method is [Jane Street's `socratic-tutor`](https://github.com/janestreet/agent_skills/tree/main/socratic-tutor) (MIT); see [CREDITS.md](skills/socratic-course-tutor/CREDITS.md).
+
+## Guards
+
+Stop agents from publishing on their own. They catch accidents, not an agent set on getting around them.
+
+- **Push guard** (`guards/git-hooks/pre-push`): a push started by Claude Code, Codex, or any program without a terminal opens a macOS dialog and goes through only on a click on **Push** (it gives up, blocked, after 2 minutes). A push you type in your own terminal goes straight through. Because it's a git hook, it catches every way of pushing: any agent, any profile, scripts, `/usr/bin/git`. The other hook names chain to each repo's own `.git/hooks`, which the global `core.hooksPath` would otherwise hide. GUI git clients have no terminal either, so they get the dialog too.
+- **Ask rules** (`guards/claude-permissions.json`): Claude Code asks before `git push` and before `gh` commands that publish or change things on GitHub (PRs, issues, comments, reviews, releases, repos, gists, secrets, workflow runs, `gh api` writes). It denies `--no-verify` and `core.hooksPath`, the two ways to skip the push guard. `install.sh` adds the rules to `~/.claude/settings.json` and `~/.claude-personal/settings.json`, keeping what's there and backing each file up first.
+- **`kill-guard`** (`guards/claude-hooks/kill-guard.py`): a Claude Code `PreToolUse` hook that blocks killing processes by name or pattern. Wire it up in `settings.json` under `hooks.PreToolUse` with matcher `Bash` and command `python3 -I ~/.claude/hooks/kill-guard.py`.
 
 ## License
 
