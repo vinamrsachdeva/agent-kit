@@ -6,7 +6,7 @@
     {
       "name": "vin-skills",
       "source": "./",
-      "description": "Address every unresolved PR review thread, bot or human: triage table, your call, fixes, issues, replies. Plus a Socratic tutor for Boot.dev chapters.",
+      "description": "Address every unresolved PR review thread, bot or human: triage table, your call, fixes, issues, replies. Plus a Socratic tutor for any course, video, notes, or topic.",
       "category": "engineering",
       "keywords": ["code-review", "pull-request", "copilot", "boot.dev", "tutoring"]
     }

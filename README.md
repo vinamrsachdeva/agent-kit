@@ -7,7 +7,7 @@ agent-kit/
 ├── AGENTS.md       # global agent rules → ~/.claude/AGENTS.md
 ├── skills/         # skills → ~/.claude/skills
 │   ├── address-review/
-│   └── socratic-bootdev-tutor/
+│   └── socratic-course-tutor/
 └── install.sh      # makes those symlinks; safe to re-run
 ```
 
@@ -44,7 +44,7 @@ npx skills add vinamrsachdeva/agent-kit
 | Skill | What it does |
 | --- | --- |
 | [address-review](skills/address-review/SKILL.md) | Settle every unresolved review thread on a PR, bot or human |
-| [socratic-bootdev-tutor](skills/socratic-bootdev-tutor/SKILL.md) | Teach a Boot.dev chapter by questioning, lesson by lesson |
+| [socratic-course-tutor](skills/socratic-course-tutor/SKILL.md) | Teach any course, video, notes, or topic by questioning, lesson by lesson |
 
 ### address-review
 
@@ -54,12 +54,14 @@ Walks every unresolved review thread on a PR (Copilot, other bots, humans) one a
 - **Needs:** `gh`, logged in. Works best alongside [Matt Pocock's skills](https://github.com/mattpocock/skills) (`/tdd`, `/code-review`, `/domain-modeling`, `/grill-with-docs`, `/retro`), which it hands work to.
 - **Best run** in the session that built the PR, so the spec and earlier review findings are in context.
 
-### socratic-bootdev-tutor
+### socratic-course-tutor
 
-Tutors you through one chapter of a [Boot.dev](https://www.boot.dev) course, Socratic style: a short diagnostic, then one question at a time per lesson, with a 0-5 skill map that only moves on demonstrated answers. Each lesson ends on its Boot.dev exercise, done either on Boot.dev or locally: code lessons are copied down as Boot.dev's starter files and checked with the same cases Submit runs, multiple-choice and AI-graded essay lessons are answered in chat. Once every lesson is done, it offers to keep going to mastery and a final assessment. If Boot.dev's API changes, the skill repairs its own script and docs.
+Tutors you through one unit of a course, Socratic style: a short diagnostic, then one question at a time per lesson, with a 0-5 skill map that only moves on demonstrated answers. The course can be an online course with graded lessons ([Boot.dev](https://www.boot.dev), Coursera, edX), course material without grading (MIT OCW, a college course, lecture notes, a textbook), a video (via its transcript), an article, or just a topic. Each lesson ends on its exercise: on a graded site, done there or locally (code lessons are copied down as the site's starter files and checked with the same cases Submit runs; multiple-choice and AI-graded essay lessons are answered in chat); otherwise on the source's own problems, or ones the tutor writes. Once every lesson is done, it offers to keep going to mastery and a final assessment.
 
-- **Run:** ask to be taught or quizzed on a Boot.dev chapter, e.g. "teach me chapter 3 of learn-javascript".
-- **Needs:** Python 3. For local code lessons, the language's runner (`node`, `pytest`, `npx`, `go`). Reads Boot.dev's public API only, so it asks you which lessons you've already finished.
+The first time it meets a graded site, it explores the site once and writes an adapter (`sites/<site>/`): how to read its courses, and how each lesson type ends locally. Boot.dev's ships with the skill. If a site changes, the skill repairs its own adapter.
+
+- **Run:** ask to be taught or quizzed, e.g. "teach me chapter 3 of boot.dev's learn-javascript", "tutor me through MIT 6.006 lecture 4", "drill me on this video: <url>".
+- **Needs:** Python 3. For local code lessons, the language's runner (`node`, `pytest`, `npx`, `go`). `yt-dlp` for video transcripts, optional. Reads sites' public content only, so it asks you which lessons you've already finished.
 
 ## License
 

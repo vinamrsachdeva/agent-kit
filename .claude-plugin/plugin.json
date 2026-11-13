@@ -1,10 +1,10 @@
 {
   "name": "vin-skills",
-  "version": "0.2.0",
-  "description": "Vin's agent skills: address-review settles every unresolved review thread on a PR; socratic-bootdev-tutor teaches a Boot.dev chapter by questioning.",
+  "version": "0.3.0",
+  "description": "Vin's agent skills: address-review settles every unresolved review thread on a PR; socratic-course-tutor teaches any course, video, notes, or topic by questioning.",
   "author": { "name": "Vinamr Sachdeva", "url": "https://github.com/vinamrsachdeva" },
   "repository": "https://github.com/vinamrsachdeva/agent-kit",
   "license": "MIT",
   "keywords": ["code-review", "pull-request", "copilot", "boot.dev", "tutoring"],
-  "skills": ["./skills/address-review", "./skills/socratic-bootdev-tutor"]
+  "skills": ["./skills/address-review", "./skills/socratic-course-tutor"]
 }
