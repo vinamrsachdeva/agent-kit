@@ -26,6 +26,10 @@ from pathlib import Path
 API = "https://api.boot.dev/v1/static"
 SITE = "https://www.boot.dev"
 META = ".bootdev-lesson.json"
+DRIFT = "Boot.dev's API may have changed: see 'When Boot.dev changes' in SKILL.md"
+# Every type LESSON-TYPES.md covers; a type outside this set is drift.
+KNOWN = {"type_code", "type_code_tests", "type_choice", "type_interview_chat", "type_text_input",
+         "type_cli", "type_shell", "type_github_checks"}
 UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 
 # How `check` runs a replica, per language. {main} / {test} are file names.
@@ -53,7 +57,10 @@ def get(path):
         with urllib.request.urlopen(req, timeout=30) as r:
             return json.load(r)
     except urllib.error.HTTPError as e:
-        sys.exit(f"GET {API}/{path}: HTTP {e.code}")
+        hint = "check the slug or uuid; if it is right, " if e.code == 404 else ""
+        sys.exit(f"GET {API}/{path}: HTTP {e.code}. {hint}{DRIFT}")
+    except json.JSONDecodeError:
+        sys.exit(f"GET {API}/{path}: not JSON. {DRIFT}")
 
 
 def course(ref):
@@ -108,6 +115,8 @@ def cmd_chapter(a):
 def cmd_lesson(a):
     l = lesson(a.lesson)
     key, d = data(l)
+    if l["type"] not in KNOWN:
+        print(f"NEW LESSON TYPE {l['type']}: add it to LESSON-TYPES.md and KNOWN", file=sys.stderr)
     print(f"# Ch {l.get('chapterNumber')} L{l.get('lessonNumber')}: {l['title']}")
     print(f"type: {l['type']}   course: {l['courseTitle']}   url: {SITE}/lessons/{l['uuid']}\n")
     print(d.get("readme", "").strip(), "\n")
@@ -156,7 +165,6 @@ def cmd_fetch(a):
         print(f"wrote {p}")
     if lang == "js" and not (out / "package.json").exists():
         (out / "package.json").write_text('{ "type": "module" }\n')
-    (out / "README.md").write_text(d["readme"])
     if "codeExpectedOutput" in d:
         (out / "expected_output.txt").write_text(d["codeExpectedOutput"])
     editable = [f["name"] for f in d["starterFiles"] if not f["isReadonly"]]
@@ -222,7 +230,10 @@ def main():
     s.add_argument("--force", action="store_true"); s.set_defaults(f=cmd_fetch)
     s = sub.add_parser("check"); s.add_argument("dir"); s.set_defaults(f=cmd_check)
     a = p.parse_args()
-    a.f(a)
+    try:
+        a.f(a)
+    except (KeyError, TypeError, IndexError) as e:
+        sys.exit(f"unexpected response shape ({e!r}). {DRIFT}")
 
 
 if __name__ == "__main__":

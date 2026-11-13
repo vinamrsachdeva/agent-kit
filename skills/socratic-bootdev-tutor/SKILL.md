@@ -34,6 +34,21 @@ API. It needs no login and cannot see the user's progress.
 The lesson's readme is the source of truth for what to teach: fetch it with `lesson`
 before teaching that lesson, and teach its content and examples, in its order.
 
+### When Boot.dev changes
+
+This skill repairs itself. When the script fails with a message naming "When Boot.dev
+changes", or a lesson's data no longer matches `LESSON-TYPES.md`, stop the session and
+fix the skill before continuing:
+
+1. Find the new shape: query the endpoint directly, watch the site's network requests
+   in a browser, or read the open-source CLI (github.com/bootdotdev/bootdev).
+2. Edit the files in this skill's folder: `scripts/bootdev.py` for endpoints and
+   fields, `LESSON-TYPES.md` (and the script's `KNOWN` set) for a new lesson type,
+   this file for a changed workflow.
+3. Done when the command that failed succeeds, and `fetch` plus `check` on one code
+   lesson still prints FAIL on the untouched starter files.
+4. Tell the user what changed and why, then resume the session.
+
 ## Session start
 
 1. Find the chapter: run `course` and `chapter`. Each lesson is one subskill on the
@@ -83,12 +98,17 @@ whenever the user asks for progress. `✓` marks a lesson that has ended:
 
 ## Ending a lesson
 
-Once the lesson reaches 3/5, hand over its Boot.dev exercise. A lesson ends only on
-its exercise: the user completes it on Boot.dev in their browser, on their own, or,
-if they prefer, on a local replica that passes. For a local code replica, give the
-user the files to edit and the `check` command to run in their own terminal. Read
-[`LESSON-TYPES.md`](LESSON-TYPES.md) before setting the first exercise: it gives
-each lesson type's local replica and pass condition.
+Once the lesson's core idea has been explained and checked once, hand over its
+Boot.dev exercise. A lesson ends only on its exercise: the user completes it on
+Boot.dev in their browser, on their own, or, if they prefer, on a local replica that
+passes. Read [`LESSON-TYPES.md`](LESSON-TYPES.md) before setting the first exercise:
+it gives each lesson type's local replica and pass condition.
+
+The exercise brief lives in chat. Post the readme's assignment there, in full: what to
+change, the expected result, and any constraints. Leave the replica files exactly as
+Boot.dev's starter files, so the user meets the same code they would in the browser.
+For a code replica, close the brief with the files to edit and the `check` command to
+run in their own terminal.
 
 ## Evaluation rules: be strict
 
