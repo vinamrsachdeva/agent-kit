@@ -62,6 +62,7 @@ The first time it meets a graded site, it explores the site once and writes an a
 
 - **Run:** ask to be taught or quizzed, e.g. "teach me chapter 3 of boot.dev's learn-javascript", "tutor me through MIT 6.006 lecture 4", "drill me on this video: <url>".
 - **Needs:** Python 3. For local code lessons, the language's runner (`node`, `pytest`, `npx`, `go`). `yt-dlp` for video transcripts, optional. Reads sites' public content only, so it asks you which lessons you've already finished.
+- **Credits:** the tutoring method is [Jane Street's `socratic-tutor`](https://github.com/janestreet/agent_skills/tree/main/socratic-tutor) (MIT); see [CREDITS.md](skills/socratic-course-tutor/CREDITS.md).
 
 ## License
 
