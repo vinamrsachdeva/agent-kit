@@ -1,1 +1,51 @@
-_chain
+#!/bin/bash
+# agent-kit commit guard, for every repo through the global hooks path (install.sh):
+#   1. identity: the work email only in work repos, and only the work email there;
+#   2. secrets: nothing staged looks like a secret (lib/scan-staged.py);
+# then the repo's own .git/hooks/pre-commit, if it has one.
+#
+# The identity check reads local git config, so nothing about your employer lives in this repo:
+#   git config --global identity.workEmail you@work.example
+#   git config --global --add identity.workDir ~/work/            (any number)
+#   git config --global --add identity.workRemote '*github.com?YourOrg/*'   (glob, any number)
+# Unset identity.workEmail and the check is off. Pair it with includeIf rules that set
+# user.email per directory and remote; this hook is the backstop when they miss.
+
+here=$(dirname "$(readlink -f "$0" 2>/dev/null || realpath "$0")")
+
+work_email=$(git config --get identity.workEmail)
+if [ -n "$work_email" ]; then
+	top=$(git rev-parse --show-toplevel)
+	work=""
+	while read -r d; do
+		[ -n "$d" ] || continue
+		d="${d/#\~/$HOME}"
+		case "$top/" in "${d%/}/"*) work=1 ;; esac
+	done < <(git config --get-all identity.workDir)
+	while read -r pat; do
+		[ -n "$pat" ] || continue
+		while read -r url; do
+			# shellcheck disable=SC2053
+			[[ $url == $pat ]] && work=1
+		done < <(git remote -v | awk '{print $2}' | sort -u)
+	done < <(git config --get-all identity.workRemote)
+	author=$(git var GIT_AUTHOR_IDENT | sed -E 's/.*<([^>]*)>.*/\1/')
+	committer=$(git var GIT_COMMITTER_IDENT | sed -E 's/.*<([^>]*)>.*/\1/')
+	if [ -z "$work" ] && { [ "$author" = "$work_email" ] || [ "$committer" = "$work_email" ]; }; then
+		echo "pre-commit: blocked, the work email ($work_email) in a non-work repo ($top)." >&2
+		echo "Set this repo's email (git config user.email <personal>) or fix the includeIf rules in ~/.gitconfig." >&2
+		exit 1
+	fi
+	if [ -n "$work" ] && { [ "$author" != "$work_email" ] || [ "$committer" != "$work_email" ]; }; then
+		echo "pre-commit: blocked, a work repo ($top) committing as $author / $committer, not $work_email." >&2
+		echo "Set this repo's email (git config user.email $work_email) or fix the includeIf rules in ~/.gitconfig." >&2
+		exit 1
+	fi
+fi
+
+python3 -I "$here/lib/scan-staged.py" || exit 1
+
+# The global hooks path hides the repo's own hooks; run its pre-commit, if any.
+own="$(git rev-parse --git-common-dir)/hooks/pre-commit"
+[ -x "$own" ] && exec "$own" "$@"
+exit 0
