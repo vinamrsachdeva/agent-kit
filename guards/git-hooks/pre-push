@@ -21,9 +21,48 @@ elif ! (: </dev/tty) 2>/dev/null; then
 	agent="A program without a terminal"
 fi
 
+zero=0000000000000000000000000000000000000000
+# What each ref update does, in words: new branch, N new commits, a delete, or a history rewrite.
+describe() {
+	local lsha="$2" rref="${3#refs/heads/}" rsha="$4" n
+	if [ "$lsha" = "$zero" ]; then
+		echo "DELETE $rref"; return
+	fi
+	if [ "$rsha" = "$zero" ]; then
+		n=$(git rev-list --count "$lsha" --not --remotes="$remote" 2>/dev/null)
+		echo "$rref: new branch, ${n:-?} commits not on $remote yet"
+		git log --format='  • %s' -8 "$lsha" --not --remotes="$remote" 2>/dev/null
+		return
+	fi
+	if ! git cat-file -e "$rsha^{commit}" 2>/dev/null; then
+		echo "$rref: FORCE PUSH over remote commits you haven't fetched; they'd be lost"; return
+	fi
+	if git merge-base --is-ancestor "$rsha" "$lsha"; then
+		n=$(git rev-list --count "$rsha..$lsha")
+		echo "$rref: $n new commit(s)"
+		git log --format='  • %s' -8 "$rsha..$lsha"
+		[ "$n" -gt 8 ] && echo "  … and $((n - 8)) more"
+		return
+	fi
+	local gone new files
+	gone=$(git rev-list --count "$lsha..$rsha")
+	new=$(git rev-list --count "$rsha..$lsha")
+	if [ "$(git rev-parse "$lsha^{tree}")" = "$(git rev-parse "$rsha^{tree}")" ]; then
+		files="files identical: only history changes"
+	else
+		files="files differ: $(git diff --shortstat "$rsha" "$lsha" | sed 's/^ //')"
+	fi
+	echo "$rref: FORCE PUSH, rewrites history: replaces $gone remote commit(s) with $new; $files"
+}
+
 if [ -n "$agent" ]; then
-	what=$(printf '%s\n' "$refs" | awk 'NF { sub("^refs/heads/", "", $3); print $3 }' | paste -sd ',' - | sed 's/,/, /g')
-	msg="$agent wants to push ${what:-nothing} to $remote ($url)."
+	repo=$(basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)")
+	what=$(printf '%s\n' "$refs" | while read -r l; do [ -n "$l" ] && describe $l; done | head -24)
+	title="git push: $repo"
+	case "$what" in *"FORCE PUSH"* | DELETE* | *$'\n'DELETE*) title="FORCE git push: $repo" ;; esac
+	msg="$agent wants to push to $remote ($url):
+
+${what:-nothing to push}"
 	if ! command -v osascript >/dev/null 2>&1; then
 		echo "pre-push: blocked. $msg No dialog available here: run the push from your own terminal." >&2
 		exit 1
@@ -31,15 +70,25 @@ if [ -n "$agent" ]; then
 	# The message goes in as an argument, so nothing in it is parsed as AppleScript.
 	answer=$(osascript \
 		-e 'on run argv' \
-		-e 'display dialog (item 1 of argv) with title "git push" buttons {"Block", "Push"} default button "Block" cancel button "Block" with icon caution giving up after 120' \
-		-e 'end run' "$msg" 2>/dev/null)
+		-e 'display dialog (item 1 of argv) with title (item 2 of argv) buttons {"Block", "Push"} default button "Block" cancel button "Block" with icon caution giving up after 300' \
+		-e 'end run' "$msg" "$title" 2>/dev/null)
 	case "$answer" in
 	*"button returned:Push"*) ;;
 	*)
-		echo "pre-push: blocked. $msg It needs a click on Push in the dialog; ask the user." >&2
+		echo "pre-push: blocked. $msg" >&2
+		echo "It needs a click on Push in the dialog; ask the user." >&2
 		exit 1
 		;;
 	esac
+else
+	# Your own push: ask only when it rewrites or deletes main/master.
+	risky=$(printf '%s\n' "$refs" | while read -r l; do [ -n "$l" ] && describe $l; done |
+		grep -E '^(main|master): FORCE|^DELETE (main|master)$')
+	if [ -n "$risky" ]; then
+		printf '%s\nGo ahead? [y/N] ' "$risky" >/dev/tty
+		read -r reply </dev/tty
+		case "$reply" in [yY]*) ;; *) echo "pre-push: cancelled." >&2; exit 1 ;; esac
+	fi
 fi
 
 # core.hooksPath hides the repo's own hooks; run its pre-push, if any.
