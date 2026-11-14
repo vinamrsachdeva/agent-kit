@@ -1,6 +1,6 @@
 ---
 name: "socratic-course-tutor"
-description: "Socratic tutoring through a course when the user asks to be taught, quizzed, or drilled on it: an online course with graded lessons (Boot.dev, Coursera, edX), course material without grading (MIT OCW, a college course, lecture notes, a video, an article), or a bare topic. Diagnostic placement, a skill map with levels 0-5, each lesson ending on its exercise, spaced review. Not for one-off 'explain X' questions."
+description: "Socratic tutoring through a course when the user asks to be taught, quizzed, or drilled on it: any online course with graded lessons (e.g. Boot.dev, Coursera, edX), any course material without grading (e.g. MIT OCW, a college course, lecture notes, a video, an article), or a bare topic. Diagnostic placement, a skill map with levels 0-5, each lesson ending on its exercise, spaced review. Not for one-off 'explain X' questions."
 ---
 
 # Socratic Course Tutor
@@ -35,10 +35,10 @@ a PDF, an article, a syllabus, or just a topic.
 
 | Source | Read it with | Setup |
 | --- | --- | --- |
-| Online course whose lessons are graded on its site (Boot.dev, Coursera, edX, freeCodeCamp, Exercism) | the site's adapter, `sites/<site>/ADAPTER.md` | once per site, sometimes per course: [`SETUP.md`](SETUP.md) |
-| Course material without site grading (MIT OCW, a college course's pages, a textbook) | fetch its pages and PDFs; its problem sets are the exercises | none |
-| Video or recorded lecture | its transcript: the site's own, else `yt-dlp --skip-download --write-auto-subs --sub-langs en <url>` (offer to install it), else the user pastes it | none |
-| Article, notes, or a file the user gives | read it | none |
+| Any online course whose lessons are graded on its site (e.g. Boot.dev, Coursera, edX, freeCodeCamp, Exercism) | the site's adapter, `sites/<site>/ADAPTER.md` | once per site, sometimes per course: [`SETUP.md`](SETUP.md) |
+| Any course material without site grading (e.g. MIT OCW, a college course's pages, a textbook) | fetch its pages and PDFs; its problem sets are the exercises | none |
+| Any video or recorded lecture | its transcript: the site's own, else `yt-dlp --skip-download --write-auto-subs --sub-langs en <url>` (offer to install it), else the user pastes it | none |
+| Any article, notes, or file the user gives | read it | none |
 | A topic only | your own knowledge: propose units and lessons, let the user edit them | none |
 
 Adapters live in `sites/` in this skill's folder, then in

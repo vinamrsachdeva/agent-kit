@@ -59,7 +59,7 @@ def check(out):
     lang, mode = m["lang"], m["mode"]
     if mode == "output":
         if lang not in RUN:
-            sys.exit(f"no runner for {lang}; compare by hand with expected_output.txt")
+            sys.exit(f"no runner for {lang}; add it to RUN in this script (SETUP.md), or compare by hand with expected_output.txt")
         _, so = run([x.format(main=m["main"]) for x in RUN[lang]], out)
         want = (out / "expected_output.txt").read_text()
         if norm(so) == norm(want):
@@ -69,7 +69,7 @@ def check(out):
         print("\n".join(difflib.unified_diff(norm(want), norm(so), "expected", "got", lineterm="")))
         sys.exit(1)
     if mode != "tests" or lang not in TEST or (not m.get("test") and lang != "go"):  # go test finds its own
-        sys.exit(f"no test runner for mode={mode} lang={lang}; complete this lesson on the site")
+        sys.exit(f"no test runner for mode={mode} lang={lang}; add it to TEST in this script (SETUP.md), or complete this lesson on the site")
     ts = [f.name for f in out.glob("*.ts")]
     for argv in TEST[lang]:
         argv = [a for x in argv for a in (ts if x == "{ts}" else [x.format(test=m["test"])])]

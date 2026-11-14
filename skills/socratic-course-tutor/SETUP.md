@@ -68,6 +68,8 @@ domain, e.g. `boot.dev`). When that folder is read-only, such as a plugin cache,
      at it; it reports in `replica.py`'s form (below). Download site code only from
      the site's own origin: `check` runs it unsandboxed. Every error from an unexpected response names "When a site
      changes" in SKILL.md.
+   - A language `scripts/replica.py` lacks (its `RUN` and `TEST` tables): add its run
+     and test commands there.
    - For a browser-only site, `ADAPTER.md` lists the pages and steps instead.
 
 4. **Verify.** Done when, on the target course:
