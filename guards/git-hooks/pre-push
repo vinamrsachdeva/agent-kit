@@ -31,7 +31,8 @@ describe() {
 	if [ "$rsha" = "$zero" ]; then
 		n=$(git rev-list --count "$lsha" --not --remotes="$remote" 2>/dev/null)
 		echo "$rref: new branch, ${n:-?} commits not on $remote yet"
-		git log --format='  • %s' -8 "$lsha" --not --remotes="$remote" 2>/dev/null
+		git log --format='  • %s' -500 "$lsha" --not --remotes="$remote" 2>/dev/null
+		[ "${n:-0}" -gt 500 ] && echo "  … and $((n - 500)) more"
 		return
 	fi
 	if ! git cat-file -e "$rsha^{commit}" 2>/dev/null; then
@@ -40,8 +41,8 @@ describe() {
 	if git merge-base --is-ancestor "$rsha" "$lsha"; then
 		n=$(git rev-list --count "$rsha..$lsha")
 		echo "$rref: $n new commit(s)"
-		git log --format='  • %s' -8 "$rsha..$lsha"
-		[ "$n" -gt 8 ] && echo "  … and $((n - 8)) more"
+		git log --format='  • %s' -500 "$rsha..$lsha"
+		[ "$n" -gt 500 ] && echo "  … and $((n - 500)) more"
 		return
 	fi
 	local gone new files
@@ -57,7 +58,7 @@ describe() {
 
 if [ -n "$agent" ]; then
 	repo=$(basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)")
-	what=$(printf '%s\n' "$refs" | while read -r l; do [ -n "$l" ] && describe $l; done | head -24)
+	what=$(printf '%s\n' "$refs" | while read -r l; do [ -n "$l" ] && describe $l; done)
 	title="git push: $repo"
 	case "$what" in *"FORCE PUSH"* | DELETE* | *$'\n'DELETE*) title="FORCE git push: $repo" ;; esac
 	msg="$agent wants to push to $remote ($url):
@@ -67,13 +68,19 @@ ${what:-nothing to push}"
 		echo "pre-push: blocked. $msg No dialog available here: run the push from your own terminal." >&2
 		exit 1
 	fi
-	# The message goes in as an argument, so nothing in it is parsed as AppleScript.
-	answer=$(osascript \
+	# A scrollable list, one row per line, so every commit shows however many there are.
+	# Everything goes in as arguments, so nothing in it is parsed as AppleScript.
+	# choose from list has no timeout of its own: perl's alarm ends osascript after 5 minutes.
+	rows=()
+	while IFS= read -r l; do rows+=("$l"); done <<<"${what:-nothing to push}"
+	answer=$(perl -e 'alarm 300; exec @ARGV' osascript \
 		-e 'on run argv' \
-		-e 'display dialog (item 1 of argv) with title (item 2 of argv) buttons {"Block", "Push"} default button "Block" cancel button "Block" with icon caution giving up after 300' \
-		-e 'end run' "$msg" "$title" 2>/dev/null)
+		-e 'set r to choose from list (items 3 thru -1 of argv) with title (item 2 of argv) with prompt (item 1 of argv) OK button name "Push" cancel button name "Block" with empty selection allowed and multiple selections allowed' \
+		-e 'if r is false then return "block"' \
+		-e 'return "push"' \
+		-e 'end run' "$agent wants to push to $remote ($url):" "$title" "${rows[@]}" 2>/dev/null)
 	case "$answer" in
-	*"button returned:Push"*) ;;
+	push) ;;
 	*)
 		echo "pre-push: blocked. $msg" >&2
 		echo "It needs a click on Push in the dialog; ask the user." >&2
