@@ -98,9 +98,10 @@ else
 	fi
 fi
 
-# core.hooksPath hides the repo's own hooks; run its pre-push, if any.
+# core.hooksPath hides the repo's own hooks; run its pre-push, if any. Not when that hook called
+# us (repo-push-guard.sh's block): it carries on by itself, and calling it back would loop.
 own="$(git rev-parse --git-common-dir)/hooks/pre-push"
-if [ -x "$own" ]; then
+if [ -z "${AGENT_KIT_SHIM:-}" ] && [ -x "$own" ]; then
 	if [ -n "$refs" ]; then printf '%s\n' "$refs"; fi | "$own" "$@"
 	exit $?
 fi

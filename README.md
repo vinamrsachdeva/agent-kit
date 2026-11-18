@@ -9,6 +9,7 @@ agent-kit/
 │   └── address-review/
 ├── guards/
 │   ├── claude-hooks/            # Claude Code hooks → ~/.claude/hooks
+│   ├── repo-push-guard.sh       # re-adds the push guard in repos with their own hooks folder
 │   ├── git-hooks/               # push guard for every repo → ~/.config/git/hooks (core.hooksPath)
 │   └── claude-permissions.json  # ask/deny rules, merged into each Claude profile's settings.json
 └── install.sh      # makes those symlinks, sets core.hooksPath, merges the rules; safe to re-run
@@ -64,6 +65,8 @@ Stop agents from publishing on their own. They catch accidents, not an agent set
 - **Commit guard** (`guards/git-hooks/pre-commit`): refuses a commit that stages a secret: `.env`-style files and private keys by name, and in the added lines, common key shapes, plus your own secrets by hash when `~/.claude/hooks/secretlib.py` exists, plus `gitleaks` when installed. It names file, line and kind, never the value. It also keeps your work email out of personal repos (and in work repos), from three local settings: `identity.workEmail`, `identity.workDir`, `identity.workRemote` (see the hook's header); pair them with `includeIf` rules that set `user.email`.
 - **Chaining:** every other hook name links to `_chain`, which runs the repo's own `.git/hooks/<name>`; both guards do the same after their checks. The global `core.hooksPath` would otherwise hide them.
 - **Ask rules** (`guards/claude-permissions.json`): Claude Code asks before `git push` and before `gh` commands that publish or change things on GitHub (PRs, issues, comments, reviews, releases, repos, gists, secrets, workflow runs, `gh api` writes). It also asks before git commands that throw away work for good (`reset --hard`, `clean`, `checkout --`, `restore`, `stash drop`/`clear`, `branch -D`, `reflog expire`, `gc --prune`), which no git hook can see. It denies `--no-verify` and `core.hooksPath`, the two ways to skip the git hooks. `install.sh` adds the rules to `~/.claude/settings.json` and `~/.claude-personal/settings.json`, keeping what's there and backing each file up first.
+- **Hidden-guard fix** (`guards/repo-push-guard.sh`): a repo that sets its own `core.hooksPath` (husky, lefthook, pre-commit, a `scripts/git-hooks` folder) beats the global one, so git never runs the push guard there. This adds a marked block at the top of that folder's `pre-push` (creating it if needed) that runs the guard first. The block does nothing without agent-kit, so it's safe to commit for teammates. `install.sh` runs it over every repo one level under `$AGENT_KIT_REPO_ROOTS` (default `~/git ~/vb/git`); pass repo paths to do just those. It leaves changed tracked files for you to commit.
+- **`push-guard`** (`guards/claude-hooks/push-guard.py`): a Claude Code `PreToolUse` hook that blocks `git push` in a repo where the push guard wouldn't run (its own hooks folder, without the block above), and names the fix. It covers repos the fixer hasn't seen yet, or whose hook got regenerated. `install.sh` wires it into both profiles.
 - **`kill-guard`** (`guards/claude-hooks/kill-guard.py`): a Claude Code `PreToolUse` hook that blocks killing processes by name or pattern. Wire it up in `settings.json` under `hooks.PreToolUse` with matcher `Bash` and command `python3 -I ~/.claude/hooks/kill-guard.py`.
 
 ## License

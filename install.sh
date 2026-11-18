@@ -21,4 +21,5 @@ if [ -z "$cur" ]; then
 elif [ "$cur" != "$H" ]; then
 	echo "skip git core.hooksPath: already $cur; point it at $H to get the push guard"
 fi
+"$R/guards/repo-push-guard.sh" # repos whose own hooks path hides the push guard
 python3 "$R/guards/merge-permissions.py" "$HOME/.claude/settings.json" "$HOME/.claude-personal/settings.json"
