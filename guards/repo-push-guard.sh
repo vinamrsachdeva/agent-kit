@@ -6,8 +6,8 @@
 # A repo's own core.hooksPath (husky, lefthook, pre-commit, a scripts/git-hooks folder) beats the
 # global one, so git never runs agent-kit's pre-push there. For each such repo this adds a marked
 # block at the top of that folder's pre-push (creating the file if needed) that runs the guard
-# first. The block does nothing on a machine without agent-kit, so it's safe in a tracked file.
-# Changed tracked files are left for you to commit. Safe to re-run.
+# first. The change stays local: a new file goes in .git/info/exclude, an edited tracked file gets
+# skip-worktree, so nothing shows in git status or reaches the remote. Safe to re-run.
 #
 # With no repos given, it checks every repo one level under $AGENT_KIT_REPO_ROOTS
 # (default: ~/git ~/vb/git).
@@ -41,6 +41,7 @@ fix() { # fix <repo>
 	[ -n "$dir" ] && [ "$dir" != "$global" ] || return 0
 	f="$dir/pre-push"
 	if [ -f "$f" ] && grep -q "$MARK" "$f"; then
+		local_only "$top" "$f"
 		echo "ok   $top"
 		return 0
 	fi
@@ -57,7 +58,25 @@ fix() { # fix <repo>
 		rm -f "$tmp"
 	fi
 	chmod +x "$f"
+	local_only "$top" "$f"
 	echo "fix  $top: $f"
+}
+
+# Keep the change on this machine: git status won't show it, so it can't be committed or pushed.
+# A tracked hook gets skip-worktree; if the repo later changes that file, a pull stops with an
+# error: run `git update-index --no-skip-worktree <file>`, `git checkout <file>`, pull, re-run this.
+local_only() { # local_only <toplevel> <hook file>
+	rel=$(cd "$1" && git ls-files --full-name -- "$2" 2>/dev/null) || return 0
+	if [ -n "$rel" ]; then
+		git -C "$1" update-index --skip-worktree -- "$rel"
+		return 0
+	fi
+	case "$2" in "$1"/*) ;; *) return 0 ;; esac # outside the work tree (e.g. .git/hooks): nothing to hide
+	ex="$(cd "$1" && git rev-parse --git-path info/exclude)"
+	case "$ex" in /*) ;; *) ex="$1/$ex" ;; esac
+	mkdir -p "$(dirname "$ex")"
+	line="/${2#"$1"/}"
+	grep -qxF "$line" "$ex" 2>/dev/null || echo "$line" >>"$ex"
 }
 
 if [ $# -gt 0 ]; then
