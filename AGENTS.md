@@ -18,4 +18,3 @@
 ## Pushing
 
 - A global `pre-push` hook opens a dialog for every push an agent starts; it goes through only when I click Push. When it says "blocked", tell me and wait: I either click Push on a retry or push myself.
-- `gh` commands that change GitHub (repo/PR/issue/release/secret writes, `gh api` writes, `gh auth token|login|refresh`) open the same kind of dialog through the `gh-guard` hook. Same rule when it says "blocked": tell me and wait.
