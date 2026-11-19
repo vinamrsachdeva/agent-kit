@@ -14,7 +14,11 @@ from pathlib import Path
 
 RULES = json.loads((Path(__file__).resolve().parent / "claude-permissions.json").read_text())
 # Hooks wired in by install (kill-guard is still wired by hand; see README).
-HOOKS = [{"matcher": "Bash", "hooks": [{"type": "command", "command": "python3 -I ~/.claude/hooks/push-guard.py", "timeout": 15}]}]
+HOOKS = [
+    {"matcher": "Bash", "hooks": [{"type": "command", "command": "python3 -I ~/.claude/hooks/push-guard.py", "timeout": 15}]},
+    # Waits up to 5 min for a click in its dialog.
+    {"matcher": "Bash", "hooks": [{"type": "command", "command": "python3 -I ~/.claude/hooks/gh-guard.py", "timeout": 320}]},
+]
 
 for arg in sys.argv[1:]:
     path = Path(arg).expanduser()
